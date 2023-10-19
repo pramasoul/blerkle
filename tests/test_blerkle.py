@@ -22,15 +22,15 @@ def bk():
 def test_create(bk):
     assert type(bk) == BLERK
 
-def test_ingest(bk):
-    n = 10
-    assert bk.ingest('t10.b3sum') == n
+def to_test_ingest(bk, bsname, n):
+    assert bk.ingest(bsname) == n
     assert sum(len(l) for l in bk.file_list_from_directory.values()) == n
     assert sum(len(l) for l in bk.file_path_list_from_hash.values()) == n
     
+def test_ingest(bk):
+    to_test_ingest(bk, 't10.b3sum', 10)
+
 @pytest.mark.slow
 def test_ingest_pig(bk):
-    n = 314113
-    assert bk.ingest('/lake/archive/b3sums/frs_1t1.b3sum') == n
-    assert sum(len(l) for l in bk.file_list_from_directory.values()) == n
-    assert sum(len(l) for l in bk.file_path_list_from_hash.values()) == n
+    to_test_ingest(bk, '/lake/archive/b3sums/frs_1t1.b3sum', 314113)
+
