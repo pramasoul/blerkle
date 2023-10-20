@@ -9,7 +9,10 @@ class BLERK:
     def __init__(self):
         self.file_list_from_directory = defaultdict(list)
         self.file_path_list_from_hash = defaultdict(list)
-        self.file_tree = {}
+        # A file tree has non-leaf nodes of (hash, dict of descendents by name)
+        #  where hash can be None if not hashed_up yet, or a hash value if so
+        # It has leaf nodes that are just the hash value of the file named
+        self.file_tree = (None, {})
 
     def ingest(self, fname: str) -> int:
         file_list_from_directory = self.file_list_from_directory
@@ -35,13 +38,13 @@ class BLERK:
                     dir_path, file_name = os.path.split(file_path)
                     descent = dir_path.split(b'/')
 
-                    # There is a caching speedup for input sorted on pathname yet to implement
+                    # Note: There is a caching speedup for input sorted on pathname to implement
                     tree_node = file_tree
                     for dname in descent:
-                        if dname not in tree_node:
-                            tree_node[dname] = {}
-                        tree_node = tree_node[dname]
-                    tree_node[file_name] = file_hash
+                        if dname not in tree_node[1]:
+                            tree_node[1][dname] = (None, {})
+                        tree_node = tree_node[1][dname]
+                    tree_node[1][file_name] = file_hash
 
                     # OLD
                     dir_name = b'/'.join(descent)
@@ -60,5 +63,16 @@ class BLERK:
             self.file_tree = file_tree
             #logging.debug(f"{self.file_list_from_directory}")
 
-            return line_number
+        return line_number
         
+    def hash_up(self):
+        hash_up_node(self.file_tree)
+
+    def hash_up_node(self, node):
+        if not isinstance(node, tuple):
+            return node
+        up_hash_value = blake3(b''.join(sorted(self.hash_up_node(a_node)
+                                               for a_node in node[1].values()))).digest()
+        return up_hash_value
+    
+# FIXME: avoid recalc of node hash_up when can
