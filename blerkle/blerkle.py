@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 
@@ -9,7 +11,9 @@ from dataclasses import dataclass, field
 @dataclass
 class FileTreeNode:
     hash_value: bytearray = b""
+    parent: FileTreeNode | None = None
     children: dict[list] = field(default_factory=lambda: defaultdict(list))
+    dir_name: bytearray | None = None
     n_leaves: int = 0
 
 class BLERK:
@@ -55,7 +59,10 @@ class BLERK:
                     for dname in descent:
                         if dname not in tree_node.children:
                             tree_node.children[dname] = FileTreeNode()
+                        parent_node = tree_node
                         tree_node = tree_node.children[dname]
+                        tree_node.parent = parent_node
+                        tree_node.dir_name = dname
                         tree_node.n_leaves += 1
 
                     # Place the leaf value (the hash value from the output of the b3sum command)
@@ -112,11 +119,22 @@ class BLERK:
                            for node in node_list[1:])
 
     def build_nodes_of_same_hashup_list(self):
-        self.nodes_of_same_hashup_list = sorted((node_list
-                                                 for node_list in self.node_list_by_hash.values() 
-                                                 if len(node_list) > 1
-                                                 and isinstance(node_list[0], FileTreeNode)),
-                                                key=lambda v: len(v),
-                                                reverse=True)
+        self.nodes_of_same_hashup_list = \
+            sorted((node_list
+                    for node_list in self.node_list_by_hash.values() 
+                    if len(node_list) > 1
+                    and isinstance(node_list[0], FileTreeNode)),
+                   key=lambda v: len(v),
+                   reverse=True)
     
-                
+    def file_path_from_node(self, node):
+        def ancestry(node: FileTreeNode):
+            while node is not None:
+                yield node
+                node = node.parent
+
+        path_components = [p.dir_name for p in ancestry(node)]
+        path_components.reverse()
+        # FIXME: the tree root is too deep by one, and this is a HACK:
+        return b'/'.join(path_components[1:])
+    

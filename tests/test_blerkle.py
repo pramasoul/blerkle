@@ -198,6 +198,7 @@ def test_depth_first_traverse(bk_short_ingested):
 def test_pig(bk, long_bsum_file):
     fname, n = long_bsum_file
     to_test_ingest(bk, fname, n)
+
     # WEAK: from a run, so no proof of correctness
     expected = b'512c443b85fe8675c7961ee8a2a7b65ab8529ee903336010a645842db8f877f9'
     assert hexlify(bk.hash_up()) == expected
@@ -217,7 +218,8 @@ def test_pig(bk, long_bsum_file):
     assert len(bk.nodes_of_same_hashup_list[0]) == 27
     # by design:
     assert len(bk.nodes_of_same_hashup_list[-1]) == 2
-
+    print(bk.file_path_from_node(bk.nodes_of_same_hashup_list[10][0]))
+    assert False
 
 
 from blerkle import FileTreeNode
