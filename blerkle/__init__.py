@@ -1,1 +1,1 @@
-from .blerkle import BLERK
+from .blerkle import BLERK, FileTreeNode
